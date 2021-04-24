@@ -9,8 +9,14 @@ export class Compute {
                 if (err) {
                     reject(err);
                 }
+                else if (!res || res.length === 0) {
+                    resolve("");
+                }
+                else if (res.length === 1) {
+                    resolve(res[0] as string);
+                }
                 else {
-                    resolve(res![0] as string);
+                    resolve(JSON.stringify(res));
                 }
             });
         });

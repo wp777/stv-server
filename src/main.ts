@@ -2,6 +2,9 @@ import express from "express";
 import bodyParser from "body-parser";
 import http from "http";
 import { Compute } from "./Compute";
+import { Config } from "./Config";
+import { UnknownError } from "./validation";
+import { CustomError } from "./validation/CustomError";
 
 const port = 3000;
 
@@ -20,11 +23,42 @@ app.post("/compute", async (request, response) => {
         });
     }
     catch (error) {
+        let errorString: string = "";
+        if (typeof(error) === "string") {
+            errorString = error;
+        }
+        else if (error instanceof CustomError) {
+            errorString = error.toString();
+        }
+        else if (typeof(error.toString) === "function") {
+            errorString = error.toString();
+        }
+        else {
+            errorString = new UnknownError().toString();
+        }
+        if (errorString.startsWith("Error: ")) {
+            errorString = errorString.substr("Error: ".length);
+        }
+        try {
+            if (typeof(JSON.parse(errorString)) !== "object") {
+                throw "not-an-object";
+            }
+        }
+        catch {
+            errorString = new UnknownError(errorString).toString();
+        }
         return response.json({
             status: "error",
-            error: error,
+            error: errorString,
         });
     }
+});
+
+app.get("/computation-limits-config", async (request, response) => {
+    return response.json({
+        status: "success",
+        data: JSON.stringify(Config),
+    });
 });
 
 server.listen(port);

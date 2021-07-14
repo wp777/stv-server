@@ -1,24 +1,50 @@
 import { PythonShell } from "python-shell";
 import * as Types from "stv-types";
+import { Config, UNLIMITED } from "./Config";
+import { FileModelValidator, MappingFileValidator } from "./validation";
+import { ComputeError } from "./validation/ComputeError";
+import { CustomError } from "./validation/CustomError";
+import { FileFormatError } from "./validation/FileFormatError";
+import { MaxExecutionTimeExceededError } from "./validation/MaxExecutionTimeExceededError";
+import { ParameterRangeError } from "./validation/ParameterRangeError";
 
 export class Compute {
     
     static async run(action: Types.actions.SomeAction): Promise<string> {
+        const maxExecutionTimeSeconds = Config.maxExecutionTimeSeconds;
+        let timeoutId: NodeJS.Timeout | null = null;
+        let timedOut: boolean = false;
         return await new Promise((resolve, reject) => {
-            PythonShell.run("../stv-compute/gui.py", { args: this.getPythonArgs(action) }, (err, res) => {
-                if (err) {
-                    reject(err);
+            const pythonShell = PythonShell.run(
+                "../stv-compute/gui.py",
+                {
+                    args: this.getPythonArgs(action),
+                },
+                (err, res) => {
+                    if (timeoutId !== null) {
+                        clearTimeout(timeoutId);
+                        timeoutId = null;
+                    }
+                    if (err) {
+                        reject(new ComputeError(err.message));
+                    }
+                    else if (!res || res.length === 0) {
+                        reject(timedOut ? new MaxExecutionTimeExceededError() : new ComputeError("No response from the compute module"));
+                    }
+                    else if (res.length === 1) {
+                        resolve(res[0] as string);
+                    }
+                    else {
+                        resolve(JSON.stringify(res));
+                    }
                 }
-                else if (!res || res.length === 0) {
-                    resolve("");
-                }
-                else if (res.length === 1) {
-                    resolve(res[0] as string);
-                }
-                else {
-                    resolve(JSON.stringify(res));
-                }
-            });
+            );
+            if (pythonShell && maxExecutionTimeSeconds > 0) {
+                timeoutId = setTimeout(() => {
+                    timedOut = true;
+                    pythonShell.kill("SIGKILL");
+                }, maxExecutionTimeSeconds * 1000);
+            }
         });
     }
     
@@ -31,6 +57,9 @@ export class Compute {
             case "bisimulationChecking": {
                 modelName = "bisimulation";
                 method = "check";
+                this.validateFileModel(action.model1Parameters, "model1");
+                this.validateFileModel(action.model2Parameters, "model2");
+                this.validateMappingFile(action.specification);
                 extraArgs = [
                     this.prepareModelString(action.model1Parameters.modelString),
                     this.prepareModelString(action.model2Parameters.modelString),
@@ -40,6 +69,8 @@ export class Compute {
             case "bisimulationModelsGeneration": {
                 modelName = "bisimulation";
                 method = "run";
+                this.validateFileModel(action.model1Parameters, "model1");
+                this.validateFileModel(action.model2Parameters, "model2");
                 extraArgs = [
                     this.prepareModelString(action.model1Parameters.modelString),
                     this.prepareModelString(action.model2Parameters.modelString),
@@ -49,6 +80,7 @@ export class Compute {
             case "lowerApproximation":
             case "upperApproximation":
             case "modelGeneration": {
+                this.validateParameterizedModel(action.modelParameters);
                 switch (action.modelParameters.type) {
                     case "bridgeEndplay": {
                         modelName = "bridge";
@@ -103,7 +135,7 @@ export class Compute {
         return [modelName, method, ...extraArgs.map(arg => arg.toString())];
     }
     
-    private static convertHeuristic(heuristic: Types.actions.DominoDfsHeuristic): 0 | 1 | 2| 3 {
+    private static convertHeuristic(heuristic: Types.actions.DominoDfsHeuristic): 0 | 1 | 2 | 3 {
         switch (heuristic) {
             case "basic": return 0;
             case "control": return 1;
@@ -115,6 +147,57 @@ export class Compute {
     private static prepareModelString(modelString: string): string {
         const buffer = Buffer.from(modelString);
         return buffer.toString("base64");
+    }
+    
+    private static validateParameterizedModel(parameters: Types.models.parameters.SomeParameters, fileId?: string): void {
+        if (parameters.type === "file") {
+            this.validateFileModel(parameters, fileId!);
+        }
+        else {
+            const keys = Object.keys(parameters);
+            const config = Config.parameterizedModels[parameters.type];
+            for (const key of keys) {
+                const value = (<any>parameters)[key];
+                const minValue = (<any>config.min)[key];
+                const maxValue = (<any>config.max)[key];
+                if (minValue !== UNLIMITED && value < minValue) {
+                    throw new ParameterRangeError(key, value, minValue, maxValue);
+                }
+                if (maxValue !== UNLIMITED && value > maxValue) {
+                    throw new ParameterRangeError(key, value, minValue, maxValue);
+                }
+            }
+        }
+    }
+    
+    private static validateFileModel(parameters: Types.models.parameters.File, fileId: string): void {
+        try {
+            const validator = new FileModelValidator(fileId, parameters.modelString);
+            validator.validate();
+        }
+        catch (e) {
+            if (e instanceof CustomError) {
+                throw e;
+            }
+            else {
+                throw new FileFormatError(fileId ? fileId : "model");
+            }
+        }
+    }
+    
+    private static validateMappingFile(parameters: Types.models.parameters.File): void {
+        try {
+            const validator = new MappingFileValidator(parameters.modelString);
+            validator.validate();
+        }
+        catch (e) {
+            if (e instanceof CustomError) {
+                throw e;
+            }
+            else {
+                throw new FileFormatError("mapping");
+            }
+        }
     }
     
 }

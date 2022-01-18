@@ -19,6 +19,7 @@ export class Compute {
                 "../stv-compute/gui.py",
                 {
                     args: this.getPythonArgs(action),
+                    pythonPath: "python"
                 },
                 (err, res) => {
                     if (timeoutId !== null) {
@@ -49,11 +50,19 @@ export class Compute {
     }
     
     private static getPythonArgs(action: Types.actions.SomeAction): string[] {
-        let modelName: "bisimulation" | "bridge" | "castles" | "drone" | "global" | "tian_ji" | "voting" | null = null;
+        let modelName: "bisimulation" | "bridge" | "castles" | "drone" | "global" | "tian_ji" | "voting" | "assumption" | null = null;
         let method: "check" | "domino" | "run" | "verify" | null = null;
         let extraArgs: (string|number)[] = [];
         
         switch (action.type) {
+            case "assumptionModelGeneration": {
+                modelName = "assumption";
+                method = "run";
+                extraArgs = [
+                    this.prepareModelString(action.modelParameters.modelString),
+                ];
+                
+            } break;
             case "bisimulationChecking": {
                 modelName = "bisimulation";
                 method = "check";

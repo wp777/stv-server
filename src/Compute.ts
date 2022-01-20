@@ -85,6 +85,34 @@ export class Compute {
                     this.prepareModelString(action.model2Parameters.modelString),
                 ];
             } break;
+            case "lowerApproximationAssumption": {
+                this.validateParameterizedModel(action.modelParameters);
+                switch(action.modelParameters.type) {
+                    case "file": {
+                        modelName = "assumption";
+                        method = "verify";
+                        extraArgs = [
+                            action.modelName,
+                            this.prepareModelString(action.modelParameters.modelString),
+                            1
+                        ]
+                    } break;
+                }
+            } break;
+            case "upperApproximationAssumption": {
+                this.validateParameterizedModel(action.modelParameters);
+                switch(action.modelParameters.type) {
+                    case "file": {
+                        modelName = "assumption";
+                        method = "verify";
+                        extraArgs = [
+                            action.modelName,
+                            this.prepareModelString(action.modelParameters.modelString),
+                            0
+                        ]
+                    } break;
+                }
+            } break;
             case "dominoDfs":
             case "lowerApproximation":
             case "upperApproximation":

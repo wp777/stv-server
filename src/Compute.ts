@@ -113,6 +113,20 @@ export class Compute {
                     } break;
                 }
             } break;
+            case "dominoAssumption": {
+                this.validateParameterizedModel(action.modelParameters);
+                switch(action.modelParameters.type) {
+                    case "file": {
+                        modelName = "assumption";
+                        method = "domino";
+                        extraArgs = [
+                            action.modelName,
+                            this.prepareModelString(action.modelParameters.modelString),
+                            this.convertHeuristic(action.heuristic)
+                        ]
+                    } break;
+                }
+            } break;
             case "dominoDfs":
             case "lowerApproximation":
             case "upperApproximation":

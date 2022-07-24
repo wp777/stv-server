@@ -3,7 +3,7 @@ import * as Types from "stv-types";
 export const UNLIMITED: number = -1;
 
 export const Config: Types.config.Config = {
-    maxExecutionTimeSeconds: 3,
+    maxExecutionTimeSeconds: 5 * 60,
     parameterizedModels: {
         bridgeEndplay: {
             min: {

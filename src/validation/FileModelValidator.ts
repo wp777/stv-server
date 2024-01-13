@@ -31,15 +31,15 @@ export class FileModelValidator extends FileValidator {
     validate(): void {
         super.validate();
         const lines = this.getSignificantLines();
-        this.validateMaxNumberOfAgentTypes(lines);
-        this.validateMaxNumberOfAgentsPerType(lines);
-        this.validateMaxNumberOfAgentsTotal(lines);
-        this.validateMaxNumberOfStates(lines);
-        this.validateMaxNumberOfTransitions(lines);
-        this.validateMaxCoalitionSize(lines);
-        this.validateMaxNumberOfPersistentVariables(lines);
-        this.validateMaxNumberOfReductionVariables(lines);
-        this.validateMaxNumberOfGoalVariables(lines);
+        // this.validateMaxNumberOfAgentTypes(lines);
+        // this.validateMaxNumberOfAgentsPerType(lines);
+        // this.validateMaxNumberOfAgentsTotal(lines);
+        // this.validateMaxNumberOfStates(lines);
+        // this.validateMaxNumberOfTransitions(lines);
+        // this.validateMaxCoalitionSize(lines);
+        // this.validateMaxNumberOfPersistentVariables(lines);
+        // this.validateMaxNumberOfReductionVariables(lines);
+        // this.validateMaxNumberOfGoalVariables(lines);
     }
     
     private validateMaxNumberOfAgentTypes(lines: string[]): void {

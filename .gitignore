@@ -105,3 +105,11 @@ dist
 
 # Build
 build/
+
+# Dot files
+dot/*
+
+# stv_v2 files
+stv_debug.txt
+stv_model_file.txt
+stv_output.txt

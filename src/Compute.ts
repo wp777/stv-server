@@ -51,10 +51,17 @@ export class Compute {
     
     private static getPythonArgs(action: Types.actions.SomeAction): string[] {
         let modelName: "bisimulation" | "bridge" | "castles" | "drone" | "global" | "tian_ji" | "voting" | "assumption" | null = null;
-        let method: "check" | "domino" | "run" | "verify" | null = null;
+        let method: "check" | "domino" | "run" | "verify" | "on_the_fly" | null = null;
         let extraArgs: (string|number)[] = [];
         
         switch (action.type) {
+            case "onTheFlyModelGeneration": {
+                modelName = "global";
+                method = "on_the_fly";
+                extraArgs = [
+                    this.prepareModelString(action.modelParameters.modelString),
+                ];
+            } break;
             case "assumptionModelGeneration": {
                 modelName = "assumption";
                 method = "run";

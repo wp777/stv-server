@@ -55,7 +55,7 @@ export class Compute {
         let extraArgs: (string|number)[] = [];
         
         switch (action.type) {
-            case "naturalStrategy" {
+            case "naturalStrategy": {
                 modelName = "global";
                 method = "natural";
                 extraArgs = [

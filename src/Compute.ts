@@ -19,7 +19,7 @@ export class Compute {
                 "../stv-compute/gui.py",
                 {
                     args: this.getPythonArgs(action),
-                    pythonPath: "python"
+                    pythonPath: "python3"
                 },
                 (err, res) => {
                     if (timeoutId !== null) {
